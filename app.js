@@ -621,3 +621,10 @@ function setTestXP() {
     alert('XP 적용 완료');
     updateTierUI();
 }
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+        .register('/surdy/service-worker.js')
+        .then(() => console.log('SW registered'))
+        .catch((err) => console.log('SW fail:', err));
+}
