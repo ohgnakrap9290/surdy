@@ -28,7 +28,6 @@ let isSleepMode = false;
  * INDEXED DB (iOS 안전 저장)
  **************************************************/
 let surdyDB;
-
 const dbRequest = indexedDB.open('SurdyDB', 1);
 
 dbRequest.onupgradeneeded = () => {
@@ -44,10 +43,13 @@ dbRequest.onupgradeneeded = () => {
 
 dbRequest.onsuccess = () => {
     surdyDB = dbRequest.result;
-    loadAllData(); // ← 앱 실행 시 데이터 복원
+    loadAllData(); // ★ 이제 여기에서 복원됨
 };
 
-window.addEventListener('load', restoreProgress);
+window.addEventListener('load', () => {
+    // IndexedDB가 열리면 복원됨
+    // 여기서는 아무것도 복원하지 않음!
+});
 
 function restoreProgress() {
     const data = localStorage.getItem('SURDY_SAVE');
