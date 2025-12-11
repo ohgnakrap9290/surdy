@@ -734,7 +734,7 @@ function autoSave() {
     };
 
     localStorage.setItem('SURDY_SAVE', JSON.stringify(saveData));
-    saveProgressDB();
+
     saveProfileDB();
 }
 
@@ -809,7 +809,11 @@ function loadAllData() {
 
     req1.onsuccess = () => {
         const save = req1.result;
-        if (save) restoreProgressFromDB(save);
+        if (save && save.isOperating) {
+            // 무시하고 진행중 상태 삭제
+            const tx = surdyDB.transaction('progress', 'readwrite');
+            tx.objectStore('progress').delete('current');
+        }
     };
 
     // XP / 기록 복원
