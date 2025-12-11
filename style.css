@@ -1,0 +1,439 @@
+/**************************************************
+ * GLOBAL LAYOUT
+ **************************************************/
+body {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #e5f7f7;
+    overflow: hidden;
+}
+
+#app-wrapper {
+    width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: #001515;
+    position: relative;
+    padding-bottom: 80px;
+}
+
+/**************************************************
+ * PAGE
+ **************************************************/
+.page {
+    display: none;
+    padding: 80px 22px 40px 22px;
+}
+
+.page.active {
+    display: block;
+}
+
+.no-scroll {
+    overflow: hidden !important;
+}
+
+/**************************************************
+ * NAVBAR
+ **************************************************/
+#navbar {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 420px;
+    height: 55px;
+    background: rgba(0, 20, 20, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 50;
+}
+
+#navbar span {
+    cursor: pointer;
+    font-size: 17px;
+    color: #aadedd;
+    transition: 0.15s;
+}
+
+#navbar span:hover {
+    color: #fff;
+    transform: scale(1.07);
+}
+
+/**************************************************
+ * HEADER & BUTTONS
+ **************************************************/
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.info-btn,
+.tier-info-btn,
+.back-btn,
+.quit-btn {
+    background: #1a8c77;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 17px;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.info-btn:hover,
+.tier-info-btn:hover {
+    transform: scale(1.1);
+}
+
+.back-btn {
+    border-radius: 10px;
+    width: 50px;
+}
+
+.quit-btn {
+    background: #992222;
+    border-radius: 10px;
+    width: 60px;
+}
+
+.main-btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 20px;
+    background: linear-gradient(135deg, #1a8c77, #125f50);
+    border: none;
+    border-radius: 14px;
+    color: white;
+    margin-top: 22px;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.main-btn:active {
+    transform: scale(0.96);
+}
+
+.main-btn.trauma {
+    background: linear-gradient(135deg, #b92020, #8a1616);
+}
+
+.main-btn.disabled {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.break-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    background: #0f4c81;
+    color: white;
+    margin-top: 25px;
+}
+
+/**************************************************
+ * CARD
+ **************************************************/
+.card {
+    background: rgba(15, 45, 45, 0.65);
+    backdrop-filter: blur(14px);
+    border-radius: 18px;
+    padding: 20px;
+    margin-top: 20px;
+    text-align: center;
+    box-shadow: 0 7px 16px rgba(0, 0, 0, 0.35);
+}
+
+.center-card {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/**************************************************
+ * TRAUMA BRIEFING (NEW)
+ **************************************************/
+.trauma-brief-card {
+    background: rgba(80, 0, 0, 0.55) !important;
+    border: 2px solid rgba(255, 50, 50, 0.6);
+    box-shadow: 0 0 12px rgba(255, 0, 0, 0.4);
+}
+
+.trauma-brief-card h3,
+.trauma-red {
+    color: #ff4444 !important;
+    font-weight: 700 !important;
+}
+
+/**************************************************
+ * WHEEL PICKER
+ **************************************************/
+#wheel-container {
+    width: 100%;
+    height: 120px;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    position: relative;
+    margin-top: 10px;
+}
+
+#wheel-container::-webkit-scrollbar {
+    display: none;
+}
+
+#wheel {
+    padding-top: 100px;
+    padding-bottom: 100px;
+    font-size: 28px;
+    text-align: center;
+}
+
+#wheel div {
+    padding: 12px 0;
+    color: #cfe9e7;
+}
+
+#wheel-highlight {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    height: 38px;
+    transform: translateY(-50%);
+    border-top: 2px solid #1a8c77;
+    border-bottom: 2px solid #1a8c77;
+}
+
+/**************************************************
+ * SURGERY PAGE
+ **************************************************/
+.timer-display {
+    text-align: center;
+    font-size: 62px;
+    margin-top: 10px;
+}
+
+.time-left {
+    text-align: center;
+    margin-top: 4px;
+    opacity: 0.7;
+    font-size: 17px;
+}
+
+.success-box {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 22px;
+}
+
+#rateChange {
+    opacity: 0;
+    margin-left: 10px;
+    transition: opacity 1s;
+}
+
+.success-green {
+    color: #00ff99 !important;
+}
+.success-red {
+    color: #ff4444 !important;
+}
+.success-white {
+    color: white !important;
+}
+
+/**************************************************
+ * ECG
+ **************************************************/
+#ecgMini {
+    width: 100%;
+    height: 80px;
+    background: black;
+    margin-top: 20px;
+    border-radius: 12px;
+}
+
+#ecg {
+    width: 100%;
+    height: 150px;
+    background: black;
+    border-radius: 14px;
+    margin-top: 25px;
+}
+
+/**************************************************
+ * LOG WINDOW
+ **************************************************/
+.log-title {
+    margin-top: 20px;
+    font-size: 17px;
+    opacity: 0.7;
+}
+
+.log-window {
+    height: 150px;
+    margin-top: 10px;
+    background: rgba(5, 15, 15, 0.55);
+    border-radius: 14px;
+    padding: 12px;
+    overflow-y: auto;
+    font-size: 15px;
+}
+
+.log-window::-webkit-scrollbar {
+    width: 6px;
+}
+
+.log-window::-webkit-scrollbar-thumb {
+    background: #1a8c77;
+}
+
+/**************************************************
+ * MODAL
+ **************************************************/
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: rgba(20, 40, 40, 0.95);
+    padding: 22px;
+    border-radius: 18px;
+    color: white;
+    width: 80%;
+    max-width: 350px;
+    max-height: 75%;
+    overflow-y: auto;
+    text-align: center;
+}
+
+/**************************************************
+ * PROFILE PAGE
+ **************************************************/
+.profile-card {
+    padding: 25px;
+}
+
+.tier-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.tier-text {
+    font-size: 32px;
+    font-weight: 800;
+}
+
+.assistant-tier {
+    margin-top: 10px;
+    font-size: 18px;
+    opacity: 0.8;
+}
+
+.time-stat {
+    margin-top: 20px;
+    font-size: 22px;
+    line-height: 34px;
+}
+
+/**************************************************
+ * RECORD FILTERS
+ **************************************************/
+.record-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.filter-btn {
+    flex: 1;
+    padding: 6px;
+    background: #114b46;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.filter-btn:active {
+    transform: scale(0.95);
+}
+
+/**************************************************
+ * TIER COLORS
+ **************************************************/
+.tierColor-intern {
+    color: white;
+}
+.tierColor-resident {
+    color: #4fb3ff;
+}
+.tierColor-specialist {
+    color: #ffd86b;
+}
+.tierColor-master {
+    color: #c58bff;
+}
+.tierColor-chief {
+    color: #ff4c4c;
+}
+
+.tier-bold {
+    font-weight: 700;
+}
+
+/**************************************************
+ * LIGHT THEME
+ **************************************************/
+.light #app-wrapper {
+    background: #f0f9f7;
+    color: #000;
+}
+
+.light .card {
+    background: white;
+    color: black;
+}
+
+.light #navbar {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.light .log-window {
+    background: rgba(220, 220, 220, 0.8);
+    color: black;
+}
+
+.light .success-white {
+    color: black !important;
+}
+
+/**************************************************
+ * XP INPUT
+ **************************************************/
+.xp-input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+}

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <title>SURDY - Surgery Focus System</title>
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1"
+        />
+        <link rel="stylesheet" href="style.css" />
+        <link rel="apple-touch-icon" href="icon-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    </head>
+
+    <body>
+        <div id="app-wrapper">
+            <!-- NAVBAR -->
+            <div id="navbar">
+                <span data-target="home">홈</span>
+                <span data-target="records">기록</span>
+                <span data-target="profile">프로필</span>
+                <span data-target="settings">설정</span>
+            </div>
+
+            <!-- HOME -->
+            <div id="home" class="page active no-scroll">
+                <div class="header-row">
+                    <h1 id="titleText">SURDY</h1>
+                    <button class="info-btn" onclick="openInfo()">i</button>
+                </div>
+
+                <div class="card center-card">
+                    <h2>수술 시간 설정</h2>
+
+                    <!-- Wheel Picker -->
+                    <div id="wheel-container">
+                        <div id="wheel"></div>
+                        <div id="wheel-highlight"></div>
+                    </div>
+
+                    <p class="warning-text">
+                        ※ 중증외상 수술은 100분 이상부터 가능
+                    </p>
+                </div>
+
+                <button
+                    id="regularBtn"
+                    class="main-btn"
+                    onclick="selectSurgery('regular')"
+                >
+                    정규 수술 시작
+                </button>
+
+                <button
+                    id="traumaBtn"
+                    class="main-btn trauma disabled"
+                    onclick="selectSurgery('trauma')"
+                >
+                    중증외상 수술 시작
+                </button>
+            </div>
+
+            <!-- INFO MODAL -->
+            <div id="infoModal" class="modal hidden">
+                <div class="modal-content modal-small">
+                    <h2>SURDY 개요</h2>
+                    <p>정규 수술 평균 성공률: 86%</p>
+                    <p>중증외상 수술 평균 성공률: 67% (XP ×3)</p>
+                    <p>휴식: 40분당 1회, 1회 10분</p>
+                    <button class="close-btn" onclick="closeInfo()">
+                        닫기
+                    </button>
+                </div>
+            </div>
+
+            <!-- BRIEFING -->
+            <div id="briefing" class="page no-scroll">
+                <div class="header-row">
+                    <button class="back-btn" onclick="showPage('home')">
+                        ←
+                    </button>
+                    <h2>수술 브리핑</h2>
+                </div>
+
+                <div id="briefPatientCard" class="card center-card">
+                    <h3>환자 정보</h3>
+                    <p id="patientInfo"></p>
+                </div>
+
+                <div id="briefSurgeryCard" class="card center-card">
+                    <h3>수술 정보</h3>
+                    <p id="surgeryMode"></p>
+                    <p id="surgeryName"></p>
+                    <p id="briefingTime"></p>
+                    <p id="breakInfoBrief"></p>
+                </div>
+
+                <button class="main-btn" onclick="startSurgery()">
+                    수술 시작
+                </button>
+            </div>
+
+            <!-- SURGERY PAGE -->
+            <div id="surgery" class="page no-scroll">
+                <div class="header-row">
+                    <button class="quit-btn" onclick="confirmQuit()">
+                        중단
+                    </button>
+                    <h2 id="surgeryTitle"></h2>
+                </div>
+
+                <div id="timer" class="timer-display">00:00</div>
+                <div id="timeLeft" class="time-left">남은 시간: --:--</div>
+
+                <div class="success-box">
+                    성공률: <span id="successRate">--%</span>
+                    <span id="rateChange"></span>
+                </div>
+
+                <canvas id="ecgMini"></canvas>
+
+                <button id="breakBtn" class="break-btn">휴식하기</button>
+
+                <div class="log-title">Log</div>
+                <div class="log-window" id="logWindow"></div>
+            </div>
+
+            <!-- BREAK MODAL -->
+            <div id="breakScreen" class="modal hidden">
+                <div class="modal-content modal-small">
+                    <h2>휴식 중</h2>
+                    <p id="breakInfo"></p>
+                    <button class="main-btn" onclick="endBreak()">
+                        수술 재개
+                    </button>
+                </div>
+            </div>
+
+            <!-- RESULT -->
+            <div id="result" class="page no-scroll">
+                <h2 id="resultTitle"></h2>
+                <canvas id="ecg"></canvas>
+                <p id="rewardInfo"></p>
+                <button class="main-btn" onclick="goHome()">홈으로</button>
+            </div>
+
+            <!-- RECORDS -->
+            <div id="records" class="page">
+                <h2>기록</h2>
+
+                <div class="record-filters">
+                    <button onclick="filterRecords('all')" class="filter-btn">
+                        전체
+                    </button>
+                    <button
+                        onclick="filterRecords('success')"
+                        class="filter-btn"
+                    >
+                        성공
+                    </button>
+                    <button onclick="filterRecords('fail')" class="filter-btn">
+                        실패
+                    </button>
+                </div>
+
+                <div id="recordList">기록이 없습니다.</div>
+            </div>
+
+            <!-- PROFILE -->
+            <div id="profile" class="page">
+                <h2>내 프로필</h2>
+
+                <div class="card profile-card">
+                    <div class="tier-row">
+                        <span id="profileTier" class="tier-text">INTERN</span>
+                        <button class="tier-info-btn" onclick="openTierInfo()">
+                            i
+                        </button>
+                    </div>
+
+                    <div class="assistant-tier">
+                        보조의 티어: <span id="assistantTier">Lv1</span>
+                    </div>
+
+                    <div class="time-stat">
+                        오늘 공부시간: <span id="todayTime">0분</span><br />
+                        총 공부시간: <span id="totalTime">0분</span>
+                    </div>
+
+                    <div class="time-stat">
+                        XP: <span id="xpText">0 / 1500</span><br />
+                        레벨: <span id="levelText">1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TIER MODAL -->
+            <div id="tierModal" class="modal hidden">
+                <div class="modal-content modal-tier">
+                    <h2>티어 안내</h2>
+
+                    <b style="color: white">INTERN</b> — 0 ~ 1499 XP <br />·
+                    Rank I / II / III
+
+                    <br /><br />
+                    <b style="color: #4fb3ff">RESIDENT</b> — 1500 ~ 9999 XP
+                    <br />· Rank I / II / III
+
+                    <br /><br />
+                    <b style="color: #ffd86b">SPECIALIST</b> — 10000 ~ 29999 XP
+                    <br />· Rank I / II / III
+
+                    <br /><br />
+                    <b style="color: #c58bff">MASTER</b> — 30000 ~ 99999 XP
+                    <br />· Rank I / II / III
+
+                    <br /><br />
+                    <b style="color: #ff4c4c">CHIEF SURGEON</b> — 100000 XP 이상
+                    <br />· 랭크 없음 (최고 등급)
+
+                    <button class="close-btn" onclick="closeTierInfo()">
+                        닫기
+                    </button>
+                </div>
+            </div>
+
+            <!-- SETTINGS -->
+            <div id="settings" class="page no-scroll">
+                <h2>설정</h2>
+
+                <div class="card center-card">
+                    <label>테마:</label>
+                    <select id="themeSelect" onchange="changeTheme()">
+                        <option value="dark">다크모드</option>
+                        <option value="light">화이트모드</option>
+                    </select>
+                </div>
+
+                <!-- XP TEST INSIDE SETTINGS (옮김) -->
+                <div class="card center-card">
+                    <h3>XP 테스트 설정</h3>
+                    <input
+                        id="testXP"
+                        type="number"
+                        placeholder="XP 입력 (예: 5000)"
+                        class="xp-input"
+                    />
+                    <button class="main-btn" onclick="setTestXP()">
+                        XP 강제 적용
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script src="wheelpicker.js"></script>
+        <script src="app.js"></script>
+    </body>
+</html>
