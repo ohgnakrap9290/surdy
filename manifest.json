@@ -1,19 +1,19 @@
 {
     "name": "SURDY",
     "short_name": "SURDY",
-    "start_url": "/surdy/index.html",
+    "start_url": "/surdy/",
     "scope": "/surdy/",
     "display": "standalone",
     "background_color": "#001515",
     "theme_color": "#001515",
     "icons": [
         {
-            "src": "icon-192.png",
+            "src": "/surdy/icon-192.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "icon-512.png",
+            "src": "/surdy/icon-512.png",
             "sizes": "512x512",
             "type": "image/png"
         }
