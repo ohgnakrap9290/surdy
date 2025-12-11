@@ -114,6 +114,7 @@
                     <button class="quit-btn" onclick="confirmQuit()">
                         중단
                     </button>
+
                     <h2 id="surgeryTitle"></h2>
                 </div>
 
@@ -131,6 +132,18 @@
 
                 <div class="log-title">Log</div>
                 <div class="log-window" id="logWindow"></div>
+                <button class="break-btn" onclick="enterSleepMode()">
+                    절전모드
+                </button>
+            </div>
+            <!-- 절전모드 오버레이 -->
+            <div id="sleepOverlay" class="hidden">
+                <div class="sleep-content">
+                    <div id="sleep-timePassed">경과: 00:00</div>
+                    <div id="sleep-timeLeft">남은 시간: 00:00</div>
+                    <div id="sleep-rate">성공률: 0%</div>
+                    <div class="sleep-exit">화면을 터치해 해제</div>
+                </div>
             </div>
 
             <!-- BREAK MODAL -->
