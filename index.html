@@ -27,7 +27,6 @@
                 <span data-target="home">홈</span>
                 <span data-target="records">기록</span>
                 <span data-target="profile">프로필</span>
-                <span data-target="settings">설정</span>
             </div>
 
             <!-- HOME -->
@@ -241,33 +240,6 @@
 
                     <button class="close-btn" onclick="closeTierInfo()">
                         닫기
-                    </button>
-                </div>
-            </div>
-
-            <!-- SETTINGS -->
-            <div id="settings" class="page no-scroll">
-                <h2>설정</h2>
-
-                <div class="card center-card">
-                    <label>테마:</label>
-                    <select id="themeSelect" onchange="changeTheme()">
-                        <option value="dark">다크모드</option>
-                        <option value="light">화이트모드</option>
-                    </select>
-                </div>
-
-                <!-- XP TEST INSIDE SETTINGS (옮김) -->
-                <div class="card center-card">
-                    <h3>XP 테스트 설정</h3>
-                    <input
-                        id="testXP"
-                        type="number"
-                        placeholder="XP 입력 (예: 5000)"
-                        class="xp-input"
-                    />
-                    <button class="main-btn" onclick="setTestXP()">
-                        XP 강제 적용
                     </button>
                 </div>
             </div>
