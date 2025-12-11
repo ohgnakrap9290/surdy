@@ -24,6 +24,42 @@ let totalXP = 0;
 let records = [];
 let theme = 'dark';
 let isSleepMode = false;
+window.addEventListener('load', restoreProgress);
+
+function restoreProgress() {
+    const data = localStorage.getItem('SURDY_SAVE');
+    if (!data) return;
+
+    const save = JSON.parse(data);
+
+    if (!save.isOperating) return;
+
+    // 진행 중이던 수술 복원
+    mode = save.mode;
+    surgeryName = save.surgeryName;
+    selectedMinutes = save.selectedMinutes;
+    time = save.time;
+    successRate = save.successRate;
+    prevSuccessRate = save.prevSuccessRate;
+    breakCount = save.breakCount;
+    breaksUsed = save.breaksUsed;
+    isOperating = true;
+
+    // 화면 세팅
+    showPage('surgery');
+    document.getElementById('surgeryTitle').innerText = surgeryName;
+    document.getElementById('logWindow').innerHTML = save.log;
+    document.getElementById('patientInfo').innerText = save.patientInfo;
+
+    updateTimerDisplay();
+    updateTimeLeft();
+    updateSuccessUI();
+    drawMiniECG();
+
+    // 타이머 다시 시작
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(tick, 1000);
+}
 
 /**************************************************
  * NAVIGATION
@@ -209,6 +245,7 @@ function tick() {
         document.getElementById('sleep-rate').innerText =
             '성공률: ' + successRate.toFixed(1) + '%';
     }
+    autoSave();
 }
 
 /**************************************************
@@ -488,6 +525,8 @@ function showTierPopup(oldTier, newTier, color) {
  * FINISH SURGERY
  **************************************************/
 function finishSurgery(forceFail = false) {
+    localStorage.removeItem('SURDY_SAVE');
+
     clearInterval(timerInterval);
     isOperating = false;
     isOnBreak = false;
@@ -653,3 +692,21 @@ function exitSleepMode() {
 document
     .getElementById('sleepOverlay')
     .addEventListener('click', exitSleepMode);
+
+function autoSave() {
+    const saveData = {
+        isOperating,
+        mode,
+        surgeryName,
+        selectedMinutes,
+        time,
+        successRate,
+        prevSuccessRate,
+        breakCount,
+        breaksUsed,
+        log: document.getElementById('logWindow').innerHTML,
+        patientInfo: document.getElementById('patientInfo')?.innerText,
+    };
+
+    localStorage.setItem('SURDY_SAVE', JSON.stringify(saveData));
+}
