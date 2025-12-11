@@ -38,6 +38,11 @@ function saveProgressDB(data) {
         if (!db.objectStoreNames.contains('progress')) {
             db.createObjectStore('progress', { keyPath: 'id' });
         }
+        if (!db.objectStoreNames.contains('xp'))
+            db.createObjectStore('xp', { keyPath: 'id' });
+
+        if (!db.objectStoreNames.contains('records'))
+            db.createObjectStore('records', { keyPath: 'id' });
     };
 
     request.onsuccess = () => {
@@ -510,46 +515,6 @@ function showTierPopup(oldTier, newTier, color) {
 /**************************************************
  * FINISH SURGERY (성공/실패)
  **************************************************/
-function finishSurgery(forceFail = false) {
-    // 기존 localStorage 사용 제거
-    // IndexedDB 진행중 데이터 삭제
-    const req = indexedDB.open('SurdyDB', 1);
-    req.onsuccess = () => {
-        const db = req.result;
-        const tx = db.transaction('progress', 'readwrite');
-        tx.objectStore('progress').delete(1);
-    };
-
-    clearInterval(timerInterval);
-    isOperating = false;
-    isOnBreak = false;
-
-    const finalRate = forceFail ? 0 : successRate;
-
-    document.getElementById('resultTitle').innerText =
-        finalRate >= 50 ? '수술 성공' : '수술 실패';
-
-    // XP 계산
-    let xpGain = 0;
-    if (!forceFail && finalRate >= 50) {
-        let base = selectedMinutes * (finalRate / 100);
-        let rand = base * (Math.random() * 0.1 - 0.05);
-        xpGain = Math.max(5, Math.floor(base + rand));
-        if (mode === 'trauma') xpGain *= 3;
-    }
-
-    totalXP += xpGain;
-
-    document.getElementById(
-        'rewardInfo'
-    ).innerText = `최종 성공률: ${finalRate.toFixed(1)}% | 획득 XP: ${xpGain}`;
-
-    drawECG(finalRate);
-    saveRecord(finalRate, xpGain);
-
-    showPage('result');
-    updateTierUI();
-}
 
 /**************************************************
  * 기록 저장
@@ -603,14 +568,7 @@ function filterRecords(type) {
  * FINISH SURGERY (성공/실패)
  **************************************************/
 function finishSurgery(forceFail = false) {
-    // 기존 localStorage 사용 제거
-    // IndexedDB 진행중 데이터 삭제
-    const req = indexedDB.open('SurdyDB', 1);
-    req.onsuccess = () => {
-        const db = req.result;
-        const tx = db.transaction('progress', 'readwrite');
-        tx.objectStore('progress').delete(1);
-    };
+    localStorage.removeItem('SURDY_SAVE');
 
     clearInterval(timerInterval);
     isOperating = false;
@@ -618,10 +576,6 @@ function finishSurgery(forceFail = false) {
 
     const finalRate = forceFail ? 0 : successRate;
 
-    document.getElementById('resultTitle').innerText =
-        finalRate >= 50 ? '수술 성공' : '수술 실패';
-
-    // XP 계산
     let xpGain = 0;
     if (!forceFail && finalRate >= 50) {
         let base = selectedMinutes * (finalRate / 100);
@@ -632,6 +586,9 @@ function finishSurgery(forceFail = false) {
 
     totalXP += xpGain;
 
+    saveXP();
+    saveRecords();
+
     document.getElementById(
         'rewardInfo'
     ).innerText = `최종 성공률: ${finalRate.toFixed(1)}% | 획득 XP: ${xpGain}`;
@@ -641,6 +598,16 @@ function finishSurgery(forceFail = false) {
 
     showPage('result');
     updateTierUI();
+
+    saveProgressDB({ id: 1, isOperating: false });
+
+    const request = indexedDB.open('SurdyDB', 1);
+    request.onsuccess = () => {
+        const db = request.result;
+        db.transaction('progress', 'readwrite')
+            .objectStore('progress')
+            .delete(1);
+    };
 }
 
 /**************************************************
@@ -869,3 +836,80 @@ setInterval(() => {
         log: document.getElementById('logWindow').innerHTML,
     });
 }, 1500);
+function saveXP() {
+    const request = indexedDB.open('SurdyDB', 1);
+
+    request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction('xp', 'readwrite');
+        tx.objectStore('xp').put({ id: 1, totalXP });
+    };
+}
+function loadXP() {
+    const request = indexedDB.open('SurdyDB', 1);
+
+    request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction('xp', 'readonly');
+        const req = tx.objectStore('xp').get(1);
+
+        req.onsuccess = () => {
+            if (req.result) {
+                totalXP = req.result.totalXP;
+            }
+        };
+    };
+}
+function saveRecords() {
+    const request = indexedDB.open('SurdyDB', 1);
+
+    request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction('records', 'readwrite');
+        tx.objectStore('records').put({ id: 1, records });
+    };
+}
+function loadRecords() {
+    const request = indexedDB.open('SurdyDB', 1);
+
+    request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction('records', 'readonly');
+        const req = tx.objectStore('records').get(1);
+
+        req.onsuccess = () => {
+            if (req.result) records = req.result.records;
+        };
+    };
+}
+window.addEventListener('load', () => {
+    loadXP(() => updateTierUI());
+    loadRecords(() => updateRecordList('all'));
+
+    restoreProgressDB((save) => {
+        if (!save) return;
+        if (!save.isOperating) return;
+
+        mode = save.mode;
+        surgeryName = save.surgeryName;
+        selectedMinutes = save.selectedMinutes;
+        time = save.time;
+        successRate = save.successRate;
+        prevSuccessRate = save.prevSuccessRate;
+        breakCount = save.breakCount;
+        breaksUsed = save.breaksUsed;
+        isOperating = save.isOperating;
+
+        showPage('surgery');
+        document.getElementById('surgeryTitle').innerText = surgeryName;
+        document.getElementById('logWindow').innerHTML = save.log;
+
+        updateTimerDisplay();
+        updateTimeLeft();
+        updateSuccessUI();
+        drawMiniECG();
+
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(tick, 1000);
+    });
+});
