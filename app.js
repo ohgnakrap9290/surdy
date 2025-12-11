@@ -34,7 +34,7 @@ function saveProgressDB(data) {
     request.onupgradeneeded = () => {
         const db = request.result;
 
-        // ⭐ 이미 존재하면 다시 만들지 않도록 체크
+        // 존재하는지 체크 후 생성
         if (!db.objectStoreNames.contains('progress')) {
             db.createObjectStore('progress', { keyPath: 'id' });
         }
@@ -44,9 +44,10 @@ function saveProgressDB(data) {
         const db = request.result;
         const tx = db.transaction('progress', 'readwrite');
         const store = tx.objectStore('progress');
-        store.put({ id: 1, ...data }); // 항상 id=1 로 저장
+        store.put({ id: 1, ...data });
     };
 }
+
 /**************************************************
  * INDEXED DB RESTORE
  **************************************************/
@@ -75,6 +76,7 @@ function showPage(id) {
     document
         .querySelectorAll('.page')
         .forEach((p) => p.classList.remove('active'));
+
     document.getElementById(id).classList.add('active');
 
     if (id === 'records') updateRecordList('all');
@@ -86,39 +88,12 @@ document.querySelectorAll('#navbar span').forEach((btn) => {
 });
 
 /**************************************************
- * MODALS
+ * SELECT SURGERY
  **************************************************/
-function openInfo() {
-    document.getElementById('infoModal').classList.remove('hidden');
-}
-function closeInfo() {
-    document.getElementById('infoModal').classList.add('hidden');
+function randomPick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function openTierInfo() {
-    document.getElementById('tierModal').classList.remove('hidden');
-}
-function closeTierInfo() {
-    document.getElementById('tierModal').classList.add('hidden');
-}
-
-/**************************************************
- * WHEEL PICKER
- **************************************************/
-function updateMinutesFromWheel(v) {
-    selectedMinutes = v;
-    updateTraumaButton();
-}
-
-function updateTraumaButton() {
-    const btn = document.getElementById('traumaBtn');
-    if (selectedMinutes < 100) btn.classList.add('disabled');
-    else btn.classList.remove('disabled');
-}
-
-/**************************************************
- * SURGERY NAMES
- **************************************************/
 const regularNames = [
     '맹장 절제술',
     '담낭 절제술',
@@ -136,13 +111,6 @@ const traumaNames = [
     '중증 골반 골절 고정술',
 ];
 
-function randomPick(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
-
-/**************************************************
- * SELECT SURGERY → BRIEFING
- **************************************************/
 function selectSurgery(type) {
     mode = type;
     surgeryName =
@@ -158,6 +126,7 @@ function selectSurgery(type) {
 
     document.getElementById('surgeryMode').innerText =
         type === 'regular' ? '정규 수술' : '⚠ 중증외상 수술 (XP ×3)';
+
     document.getElementById('surgeryName').innerText = `수술명: ${surgeryName}`;
     document.getElementById(
         'briefingTime'
@@ -188,8 +157,8 @@ function startSurgery() {
 
     let startRate = 25 + Math.random() * 15;
     if (mode === 'trauma') startRate -= 7;
-    successRate = prevSuccessRate = startRate;
 
+    successRate = prevSuccessRate = startRate;
     updateSuccessUI();
 
     document.getElementById('logWindow').innerHTML = '';
@@ -203,7 +172,6 @@ function startSurgery() {
     bb.disabled = breakCount === 0;
     bb.style.opacity = breakCount === 0 ? 0.4 : 1;
 }
-
 /**************************************************
  * TICK
  **************************************************/
@@ -217,6 +185,7 @@ function tick() {
     updateTimerDisplay();
     updateTimeLeft();
 
+    // 시간 종료 → finishSurgery
     if (time >= selectedMinutes * 60) {
         finishSurgery(false);
         return;
@@ -226,6 +195,7 @@ function tick() {
     maybeBonus();
     maybeDrop();
 
+    // 1분마다 의료 로그
     if (time % 60 === 0) {
         logMessage(
             randomPick([
@@ -237,6 +207,8 @@ function tick() {
             ])
         );
     }
+
+    // 절전모드 상태 업데이트
     if (isSleepMode) {
         document.getElementById('sleep-timePassed').innerText =
             '경과: ' + document.getElementById('timer').innerText;
@@ -247,7 +219,8 @@ function tick() {
         document.getElementById('sleep-rate').innerText =
             '성공률: ' + successRate.toFixed(1) + '%';
     }
-    autoSave();
+
+    autoSave(); // 자동 저장
 }
 
 /**************************************************
@@ -341,7 +314,7 @@ function logMessage(msg) {
 }
 
 /**************************************************
- * BREAK
+ * BREAK SYSTEM
  **************************************************/
 function startBreak() {
     if (breaksUsed >= breakCount) return;
@@ -385,7 +358,6 @@ function updateTimeLeft() {
     const s = String(left % 60).padStart(2, '0');
     document.getElementById('timeLeft').innerText = `남은 시간: ${m}:${s}`;
 }
-
 /**************************************************
  * XP / TIER / RANK SYSTEM
  **************************************************/
@@ -397,9 +369,13 @@ const tierTable = [
     { name: 'CHIEF SURGEON', min: 100000, max: Infinity, color: '#ff4c4c' },
 ];
 
+/**************************************************
+ * 현재 XP → 티어 + 등급 계산
+ **************************************************/
 function getTierRank(xp) {
     let tier = tierTable.find((t) => xp >= t.min && xp <= t.max);
 
+    // 최종 티어 (CHIEF SURGEON) 특별 처리
     if (tier.name === 'CHIEF SURGEON') {
         return {
             tier: 'CHIEF SURGEON',
@@ -410,22 +386,23 @@ function getTierRank(xp) {
         };
     }
 
+    // 세부 등급 계산
     const span = tier.max - tier.min + 1;
-    const unit = Math.floor(span / 3);
-    const local = xp - tier.min;
+    const unit = Math.floor(span / 3); // I / II / III 경계
+    const localXP = xp - tier.min;
 
     let rank = '';
     let progress = 0;
 
-    if (local < unit) {
+    if (localXP < unit) {
         rank = 'I';
-        progress = local / unit;
-    } else if (local < unit * 2) {
+        progress = localXP / unit;
+    } else if (localXP < unit * 2) {
         rank = 'II';
-        progress = (local - unit) / unit;
+        progress = (localXP - unit) / unit;
     } else {
         rank = 'III';
-        progress = (local - unit * 2) / unit;
+        progress = (localXP - unit * 2) / unit;
     }
 
     return {
@@ -441,7 +418,7 @@ let lastTier = '';
 let lastRank = '';
 
 /**************************************************
- * UPDATE PROFILE UI
+ * PROFILE UI 업데이트
  **************************************************/
 function updateTierUI() {
     const info = getTierRank(totalXP);
@@ -456,11 +433,13 @@ function updateTierUI() {
         info.nextXP
     }`;
 
+    // 승급 감지
     if (lastTier && lastRank) {
-        if (info.tier !== lastTier)
+        if (info.tier !== lastTier) {
             showTierPopup(lastTier, info.tier, info.color);
-        else if (info.rank !== lastRank)
+        } else if (info.rank !== lastRank) {
             showRankPopup(info.tier, lastRank, info.rank, info.color);
+        }
     }
 
     lastTier = info.tier;
@@ -468,7 +447,7 @@ function updateTierUI() {
 }
 
 /**************************************************
- * POPUP — RANK
+ * POPUP — RANK 승급 (I → II → III)
  **************************************************/
 function showRankPopup(tier, oldRank, newRank, color) {
     const modal = document.createElement('div');
@@ -480,21 +459,23 @@ function showRankPopup(tier, oldRank, newRank, color) {
             border: 2px solid ${color};
             padding: 25px;
         ">
-            <h2 style="color:${color}; font-size:24px;">승급!!</h2>
+            <h2 style="color:${color}; font-size:24px; font-weight:800;">승급</h2>
             <p style="font-size:22px; margin-top:10px;">
-                ${tier} ${oldRank} → <br>
-                <b style="color:${color}; font-size:24px;">${tier} ${newRank}</b>
+                ${tier} ${oldRank} →
+                <br>
+                <b style="color:${color}; font-size:26px;">${tier} ${newRank}</b>
             </p>
             <button class="main-btn" onclick="this.parentElement.parentElement.remove()">
                 계속
             </button>
         </div>
     `;
+
     document.body.appendChild(modal);
 }
 
 /**************************************************
- * POPUP — TIER
+ * POPUP — TIER 승급 (INTERN → RESIDENT 등)
  **************************************************/
 function showTierPopup(oldTier, newTier, color) {
     const modal = document.createElement('div');
@@ -508,26 +489,36 @@ function showTierPopup(oldTier, newTier, color) {
             padding: 35px;
         ">
             <h2 style="font-size:34px; font-weight:900; color:${color};">
-                티어 승급!!
+                티어 승급!
             </h2>
-            <p style="margin-top:15px; font-size:26px;">
-                ${oldTier} →<br>
-                <b style="color:${color}; font-size:30px;">${newTier}</b>
+
+            <p style="margin-top:15px; font-size:26px; line-height:38px;">
+                ${oldTier} →
+                <br>
+                <b style="color:${color}; font-size:32px;">${newTier}</b>
             </p>
+
             <button class="main-btn" onclick="this.parentElement.parentElement.remove()"
                 style="margin-top:25px;">
                 계속
             </button>
         </div>
     `;
+
     document.body.appendChild(modal);
 }
-
 /**************************************************
- * FINISH SURGERY
+ * FINISH SURGERY (성공/실패)
  **************************************************/
 function finishSurgery(forceFail = false) {
-    localStorage.removeItem('SURDY_SAVE');
+    // 기존 localStorage 사용 제거
+    // IndexedDB 진행중 데이터 삭제
+    const req = indexedDB.open('SurdyDB', 1);
+    req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('progress', 'readwrite');
+        tx.objectStore('progress').delete(1);
+    };
 
     clearInterval(timerInterval);
     isOperating = false;
@@ -538,6 +529,7 @@ function finishSurgery(forceFail = false) {
     document.getElementById('resultTitle').innerText =
         finalRate >= 50 ? '수술 성공' : '수술 실패';
 
+    // XP 계산
     let xpGain = 0;
     if (!forceFail && finalRate >= 50) {
         let base = selectedMinutes * (finalRate / 100);
@@ -557,18 +549,10 @@ function finishSurgery(forceFail = false) {
 
     showPage('result');
     updateTierUI();
-    // 수술 끝나면 진행 중 데이터 삭제
-    saveProgressDB({ id: 1, isOperating: false });
-    const request = indexedDB.open('SurdyDB', 1);
-    request.onsuccess = () => {
-        const db = request.result;
-        const tx = db.transaction('progress', 'readwrite');
-        tx.objectStore('progress').delete(1);
-    };
 }
 
 /**************************************************
- * RECORD
+ * 기록 저장
  **************************************************/
 function saveRecord(rate, xp) {
     records.push({
@@ -581,6 +565,9 @@ function saveRecord(rate, xp) {
     });
 }
 
+/**************************************************
+ * 기록 리스트 업데이트
+ **************************************************/
 function updateRecordList(filter = 'all') {
     const list = document.getElementById('recordList');
 
@@ -612,9 +599,100 @@ function updateRecordList(filter = 'all') {
 function filterRecords(type) {
     updateRecordList(type);
 }
+/**************************************************
+ * FINISH SURGERY (성공/실패)
+ **************************************************/
+function finishSurgery(forceFail = false) {
+    // 기존 localStorage 사용 제거
+    // IndexedDB 진행중 데이터 삭제
+    const req = indexedDB.open('SurdyDB', 1);
+    req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('progress', 'readwrite');
+        tx.objectStore('progress').delete(1);
+    };
+
+    clearInterval(timerInterval);
+    isOperating = false;
+    isOnBreak = false;
+
+    const finalRate = forceFail ? 0 : successRate;
+
+    document.getElementById('resultTitle').innerText =
+        finalRate >= 50 ? '수술 성공' : '수술 실패';
+
+    // XP 계산
+    let xpGain = 0;
+    if (!forceFail && finalRate >= 50) {
+        let base = selectedMinutes * (finalRate / 100);
+        let rand = base * (Math.random() * 0.1 - 0.05);
+        xpGain = Math.max(5, Math.floor(base + rand));
+        if (mode === 'trauma') xpGain *= 3;
+    }
+
+    totalXP += xpGain;
+
+    document.getElementById(
+        'rewardInfo'
+    ).innerText = `최종 성공률: ${finalRate.toFixed(1)}% | 획득 XP: ${xpGain}`;
+
+    drawECG(finalRate);
+    saveRecord(finalRate, xpGain);
+
+    showPage('result');
+    updateTierUI();
+}
 
 /**************************************************
- * ECG
+ * 기록 저장
+ **************************************************/
+function saveRecord(rate, xp) {
+    records.push({
+        date: new Date().toLocaleString(),
+        name: surgeryName,
+        minutes: selectedMinutes,
+        mode,
+        success: rate.toFixed(1),
+        xp,
+    });
+}
+
+/**************************************************
+ * 기록 리스트 업데이트
+ **************************************************/
+function updateRecordList(filter = 'all') {
+    const list = document.getElementById('recordList');
+
+    if (records.length === 0) {
+        list.innerHTML = '기록이 없습니다.';
+        return;
+    }
+
+    let filtered = records;
+
+    if (filter === 'success') filtered = records.filter((r) => r.success >= 50);
+    if (filter === 'fail') filtered = records.filter((r) => r.success < 50);
+
+    list.innerHTML = filtered
+        .map(
+            (r) => `
+        <div class="card">
+            <b>${r.date}</b><br>
+            ${r.name} (${r.mode})<br>
+            시간: ${r.minutes}분<br>
+            성공률: ${r.success}%<br>
+            XP: ${r.xp}
+        </div>
+    `
+        )
+        .join('');
+}
+
+function filterRecords(type) {
+    updateRecordList(type);
+}
+/**************************************************
+ * ECG (결과 화면)
  **************************************************/
 function drawECG(finalRate) {
     const canvas = document.getElementById('ecg');
@@ -639,6 +717,9 @@ function drawECG(finalRate) {
     ctx.stroke();
 }
 
+/**************************************************
+ * 수술 중 실시간 ECG (작은 그래프)
+ **************************************************/
 function drawMiniECG() {
     const canvas = document.getElementById('ecgMini');
     const ctx = canvas.getContext('2d');
@@ -653,6 +734,7 @@ function drawMiniECG() {
     ctx.beginPath();
 
     const mid = canvas.height / 2;
+
     for (let x = 0; x < canvas.width; x++) {
         ctx.lineTo(x, mid + Math.sin(x * 0.15) * 12);
     }
@@ -668,7 +750,7 @@ function goHome() {
 }
 
 /**************************************************
- * XP TEST
+ * XP TESTING (삭제 예정일 때 약해지는 영향)
  **************************************************/
 function setTestXP() {
     let v = Number(document.getElementById('testXP').value);
@@ -682,6 +764,9 @@ function setTestXP() {
     updateTierUI();
 }
 
+/**************************************************
+ * SERVICE WORKER
+ **************************************************/
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker
         .register('/surdy/service-worker.js')
@@ -689,20 +774,28 @@ if ('serviceWorker' in navigator) {
         .catch((err) => console.log('SW fail:', err));
 }
 
+/**************************************************
+ * SLEEP MODE (절전 모드)
+ **************************************************/
 function enterSleepMode() {
     if (!isOperating) return;
 
     isSleepMode = true;
     document.getElementById('sleepOverlay').classList.remove('hidden');
 }
+
 function exitSleepMode() {
     isSleepMode = false;
     document.getElementById('sleepOverlay').classList.add('hidden');
 }
+
 document
     .getElementById('sleepOverlay')
     .addEventListener('click', exitSleepMode);
 
+/**************************************************
+ * AUTO SAVE — 매 틱에서 저장 호출됨
+ **************************************************/
 function autoSave() {
     const saveData = {
         isOperating,
@@ -717,8 +810,14 @@ function autoSave() {
         log: document.getElementById('logWindow').innerHTML,
         patientInfo: document.getElementById('patientInfo')?.innerText,
     };
+
+    // ⭐ IndexedDB 저장 함수
     saveProgressDB(saveData);
 }
+
+/**************************************************
+ * RESTORE PROGRESS AT PAGE LOAD
+ **************************************************/
 window.addEventListener('load', () => {
     restoreProgressDB((save) => {
         if (!save) return;
@@ -735,7 +834,7 @@ window.addEventListener('load', () => {
         breaksUsed = save.breaksUsed;
         isOperating = save.isOperating;
 
-        // UI 회복
+        // 화면 회복
         showPage('surgery');
         document.getElementById('surgeryTitle').innerText = surgeryName;
         document.getElementById('logWindow').innerHTML = save.log;
@@ -745,14 +844,14 @@ window.addEventListener('load', () => {
         updateSuccessUI();
         drawMiniECG();
 
-        // 타이머 재시작
+        // 타이머 재개
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(tick, 1000);
     });
 });
 
 /**************************************************
- * AUTO SAVE EVERY 1.5 SEC
+ * AUTO SAVE EVERY 1.5 SEC (백업용)
  **************************************************/
 setInterval(() => {
     if (!isOperating) return;
