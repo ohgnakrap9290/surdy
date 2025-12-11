@@ -580,6 +580,7 @@ function finishSurgery(forceFail = false) {
 
     showPage('result');
     updateTierUI();
+    saveProfileDB();
 }
 
 /**************************************************
@@ -802,30 +803,40 @@ function saveProfileDB() {
 function loadAllData() {
     if (!surdyDB) return;
 
-    // 진행 중 수술 복원
+    /* ----------------------------------------------------
+       1) 진행 중 수술(progress) 복원하지 않기 (삭제)
+    ---------------------------------------------------- */
     const tx1 = surdyDB.transaction('progress', 'readonly');
     const store1 = tx1.objectStore('progress');
     const req1 = store1.get('current');
 
     req1.onsuccess = () => {
         const save = req1.result;
+
         if (save && save.isOperating) {
-            // 무시하고 진행중 상태 삭제
-            const tx = surdyDB.transaction('progress', 'readwrite');
-            tx.objectStore('progress').delete('current');
+            // 진행 중 수술 삭제
+            const txDel = surdyDB.transaction('progress', 'readwrite');
+            txDel.objectStore('progress').delete('current');
         }
     };
 
-    // XP / 기록 복원
+    /* ----------------------------------------------------
+       2) XP / 수술 기록(profile) 복원하기
+    ---------------------------------------------------- */
     const tx2 = surdyDB.transaction('profile', 'readonly');
     const store2 = tx2.objectStore('profile');
     const req2 = store2.get('profile');
 
     req2.onsuccess = () => {
         const data = req2.result;
+
         if (data) {
             totalXP = data.totalXP ?? 0;
             records = data.records ?? [];
         }
+
+        // ★★★★★ 중요: UI 업데이트 꼭 해야 함 ★★★★★
+        updateTierUI(); // XP 반영
+        updateRecordList('all'); // 기록 목록 반영
     };
 }
