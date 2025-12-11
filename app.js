@@ -33,7 +33,11 @@ function saveProgressDB(data) {
 
     request.onupgradeneeded = () => {
         const db = request.result;
-        db.createObjectStore('progress', { keyPath: 'id' }); // 하나만 저장
+
+        // ⭐ 이미 존재하면 다시 만들지 않도록 체크
+        if (!db.objectStoreNames.contains('progress')) {
+            db.createObjectStore('progress', { keyPath: 'id' });
+        }
     };
 
     request.onsuccess = () => {
@@ -555,6 +559,12 @@ function finishSurgery(forceFail = false) {
     updateTierUI();
     // 수술 끝나면 진행 중 데이터 삭제
     saveProgressDB({ id: 1, isOperating: false });
+    const request = indexedDB.open('SurdyDB', 1);
+    request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction('progress', 'readwrite');
+        tx.objectStore('progress').delete(1);
+    };
 }
 
 /**************************************************
@@ -707,6 +717,7 @@ function autoSave() {
         log: document.getElementById('logWindow').innerHTML,
         patientInfo: document.getElementById('patientInfo')?.innerText,
     };
+    saveProgressDB(saveData);
 }
 window.addEventListener('load', () => {
     restoreProgressDB((save) => {
