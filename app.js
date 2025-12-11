@@ -24,7 +24,6 @@ let totalXP = 0;
 let records = [];
 let theme = 'dark';
 let isSleepMode = false;
-window.addEventListener('load', restoreProgress);
 
 function restoreProgress() {
     const data = localStorage.getItem('SURDY_SAVE');
@@ -710,3 +709,4 @@ function autoSave() {
 
     localStorage.setItem('SURDY_SAVE', JSON.stringify(saveData));
 }
+window.addEventListener('load', restoreProgress);
