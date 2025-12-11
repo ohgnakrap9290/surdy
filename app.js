@@ -23,6 +23,7 @@ let totalXP = 0;
 
 let records = [];
 let theme = 'dark';
+let isSleepMode = false;
 
 /**************************************************
  * NAVIGATION
@@ -197,6 +198,16 @@ function tick() {
                 '보조의: 절개 부위 시야 확보 완료.',
             ])
         );
+    }
+    if (isSleepMode) {
+        document.getElementById('sleep-timePassed').innerText =
+            '경과: ' + document.getElementById('timer').innerText;
+
+        document.getElementById('sleep-timeLeft').innerText =
+            document.getElementById('timeLeft').innerText;
+
+        document.getElementById('sleep-rate').innerText =
+            '성공률: ' + successRate.toFixed(1) + '%';
     }
 }
 
@@ -628,3 +639,17 @@ if ('serviceWorker' in navigator) {
         .then(() => console.log('SW registered'))
         .catch((err) => console.log('SW fail:', err));
 }
+
+function enterSleepMode() {
+    if (!isOperating) return;
+
+    isSleepMode = true;
+    document.getElementById('sleepOverlay').classList.remove('hidden');
+}
+function exitSleepMode() {
+    isSleepMode = false;
+    document.getElementById('sleepOverlay').classList.add('hidden');
+}
+document
+    .getElementById('sleepOverlay')
+    .addEventListener('click', exitSleepMode);
