@@ -25,39 +25,38 @@ let records = [];
 let theme = 'dark';
 let isSleepMode = false;
 
-function restoreProgress() {
-    const data = localStorage.getItem('SURDY_SAVE');
-    if (!data) return;
+/**************************************************
+ * INDEXED DB SAVE
+ **************************************************/
+function saveProgressDB(data) {
+    const request = indexedDB.open('SurdyDB', 1);
 
-    const save = JSON.parse(data);
+    request.onupgradeneeded = () => {
+        const db = request.result;
+        db.createObjectStore('progress', { keyPath: 'id' }); // 하나만 저장
+    };
 
-    if (!save.isOperating) return;
+    request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction('progress', 'readwrite');
+        const store = tx.objectStore('progress');
+        store.put({ id: 1, ...data }); // 항상 id=1 로 저장
+    };
+}
+/**************************************************
+ * INDEXED DB RESTORE
+ **************************************************/
+function restoreProgressDB(callback) {
+    const request = indexedDB.open('SurdyDB', 1);
 
-    // 진행 중이던 수술 복원
-    mode = save.mode;
-    surgeryName = save.surgeryName;
-    selectedMinutes = save.selectedMinutes;
-    time = save.time;
-    successRate = save.successRate;
-    prevSuccessRate = save.prevSuccessRate;
-    breakCount = save.breakCount;
-    breaksUsed = save.breaksUsed;
-    isOperating = true;
+    request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction('progress', 'readonly');
+        const store = tx.objectStore('progress');
+        const req = store.get(1);
 
-    // 화면 세팅
-    showPage('surgery');
-    document.getElementById('surgeryTitle').innerText = surgeryName;
-    document.getElementById('logWindow').innerHTML = save.log;
-    document.getElementById('patientInfo').innerText = save.patientInfo;
-
-    updateTimerDisplay();
-    updateTimeLeft();
-    updateSuccessUI();
-    drawMiniECG();
-
-    // 타이머 다시 시작
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(tick, 1000);
+        req.onsuccess = () => callback(req.result);
+    };
 }
 
 /**************************************************
@@ -554,6 +553,8 @@ function finishSurgery(forceFail = false) {
 
     showPage('result');
     updateTierUI();
+    // 수술 끝나면 진행 중 데이터 삭제
+    saveProgressDB({ id: 1, isOperating: false });
 }
 
 /**************************************************
@@ -706,7 +707,55 @@ function autoSave() {
         log: document.getElementById('logWindow').innerHTML,
         patientInfo: document.getElementById('patientInfo')?.innerText,
     };
-
-    localStorage.setItem('SURDY_SAVE', JSON.stringify(saveData));
 }
-window.addEventListener('load', restoreProgress);
+window.addEventListener('load', () => {
+    restoreProgressDB((save) => {
+        if (!save) return;
+        if (!save.isOperating) return;
+
+        // === 진행 중 수술 복원 ===
+        mode = save.mode;
+        surgeryName = save.surgeryName;
+        selectedMinutes = save.selectedMinutes;
+        time = save.time;
+        successRate = save.successRate;
+        prevSuccessRate = save.prevSuccessRate;
+        breakCount = save.breakCount;
+        breaksUsed = save.breaksUsed;
+        isOperating = save.isOperating;
+
+        // UI 회복
+        showPage('surgery');
+        document.getElementById('surgeryTitle').innerText = surgeryName;
+        document.getElementById('logWindow').innerHTML = save.log;
+
+        updateTimerDisplay();
+        updateTimeLeft();
+        updateSuccessUI();
+        drawMiniECG();
+
+        // 타이머 재시작
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(tick, 1000);
+    });
+});
+
+/**************************************************
+ * AUTO SAVE EVERY 1.5 SEC
+ **************************************************/
+setInterval(() => {
+    if (!isOperating) return;
+
+    saveProgressDB({
+        isOperating,
+        mode,
+        surgeryName,
+        selectedMinutes,
+        time,
+        successRate,
+        prevSuccessRate,
+        breakCount,
+        breaksUsed,
+        log: document.getElementById('logWindow').innerHTML,
+    });
+}, 1500);
