@@ -452,7 +452,7 @@ body {
 }
 
 #sleepOverlay.hidden {
-    display: none;
+    display: none !important;
 }
 
 .sleep-content {
@@ -467,4 +467,3 @@ body {
     font-size: 15px;
     opacity: 0.7;
 }
-
