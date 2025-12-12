@@ -75,9 +75,13 @@ function restoreProgress() {
  * NAVIGATION
  **************************************************/
 function showPage(id) {
-    // ===== iOS 안전장치: 보이지 않는 오버레이 강제 제거 =====
+    // sleepOverlay는 숨기기만
     document.getElementById('sleepOverlay')?.classList.add('hidden');
-    document.querySelectorAll('.modal').forEach((m) => m.remove());
+
+    // 모든 모달은 삭제 ❌ → 숨기기 ⭕
+    document
+        .querySelectorAll('.modal')
+        .forEach((m) => m.classList.add('hidden'));
 
     if (isOperating && id !== 'surgery') {
         alert('수술 중에는 이동할 수 없습니다.');
