@@ -301,7 +301,7 @@ body {
  * MODAL
  **************************************************/
 .modal {
-    position: fixed;
+    position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.55);
     display: flex;
@@ -441,7 +441,7 @@ body {
    절전모드(화면 어둡게)
 ===================================== */
 #sleepOverlay {
-    position: fixed;
+    position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.88);
     display: flex;
@@ -466,4 +466,16 @@ body {
     margin-top: 30px;
     font-size: 15px;
     opacity: 0.7;
+}
+
+/* ===== iOS 터치 버그 방지 핵심 ===== */
+#sleepOverlay,
+.modal {
+    pointer-events: none; /* 기본은 터치 차단 */
+}
+
+/* 실제로 보일 때만 터치 허용 */
+#sleepOverlay:not(.hidden),
+.modal:not(.hidden) {
+    pointer-events: auto;
 }
