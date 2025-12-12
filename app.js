@@ -835,7 +835,7 @@ function loadAllData() {
     if (!surdyDB) return;
 
     /* ----------------------------------------------------
-       1) 진행 중 수술(progress) 복원하지 않기 (삭제)
+    1) 진행 중 수술(progress) 복원하지 않기 (삭제)
     ---------------------------------------------------- */
     const tx1 = surdyDB.transaction('progress', 'readonly');
     const store1 = tx1.objectStore('progress');
@@ -849,6 +849,7 @@ function loadAllData() {
             const txDel = surdyDB.transaction('progress', 'readwrite');
             txDel.objectStore('progress').delete('current');
         }
+        isOperating = false;
     };
 
     /* ----------------------------------------------------
