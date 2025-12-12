@@ -452,7 +452,7 @@ body {
 }
 
 #sleepOverlay.hidden {
-    display: none !important;
+    display: none;
 }
 
 .sleep-content {
