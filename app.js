@@ -20,6 +20,9 @@ let totalStudy = 0;
 
 // XP 시스템 — 누적형
 let totalXP = 0;
+let hiddenAt = null;
+let noSleep = new NoSleep();
+let isNoSleepEnabled = false;
 
 let records = [];
 let theme = 'dark';
@@ -347,10 +350,29 @@ function maybeDrop() {
  * DISTRACTION
  **************************************************/
 document.addEventListener('visibilitychange', () => {
-    if (document.hidden && isOperating && !isOnBreak) {
-        successRate = Math.max(0, successRate - 10);
-        logMessage('모니터링 이탈 → 성공률 -10%');
-        updateSuccessUI();
+    if (document.hidden) {
+        // 화면이 가려진 시점 기록
+        hiddenAt = performance.now();
+    } else {
+        // 다시 보이게 되었을 때
+        if (hiddenAt !== null) {
+            const dt = performance.now() - hiddenAt;
+
+            // ★ 3초 이하 → 화면 자동 잠금/자연스러운 화면 변환
+            if (dt < 3000) {
+                // 이탈 아님 → 아무 것도 하지 않음
+                hiddenAt = null;
+                return;
+            }
+
+            // ★ 3초 이상 → 진짜 이탈로 판단
+            if (isOperating && !isOnBreak) {
+                successRate = Math.max(0, successRate - 10);
+                logMessage('모니터링 이탈 → 성공률 -10%');
+                updateSuccessUI();
+            }
+        }
+        hiddenAt = null;
     }
 });
 
@@ -710,10 +732,19 @@ function enterSleepMode() {
 
     isSleepMode = true;
     document.getElementById('sleepOverlay').classList.remove('hidden');
+    if (!isNoSleepEnabled) {
+        noSleep.enable();
+        isNoSleepEnabled = true;
+    }
 }
 function exitSleepMode() {
     isSleepMode = false;
     document.getElementById('sleepOverlay').classList.add('hidden');
+    // 화면꺼짐 방지 OFF
+    if (isNoSleepEnabled) {
+        noSleep.disable();
+        isNoSleepEnabled = false;
+    }
 }
 document
     .getElementById('sleepOverlay')
@@ -821,7 +852,7 @@ function loadAllData() {
     };
 
     /* ----------------------------------------------------
-       2) XP / 수술 기록(profile) 복원하기
+    2) XP / 수술 기록(profile) 복원하기
     ---------------------------------------------------- */
     const tx2 = surdyDB.transaction('profile', 'readonly');
     const store2 = tx2.objectStore('profile');
